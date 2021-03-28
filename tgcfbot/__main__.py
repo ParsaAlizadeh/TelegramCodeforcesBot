@@ -25,7 +25,7 @@ logging.basicConfig(
     format='[%(levelname)s] %(name)s - %(message)s', level=logging.INFO
 )
 
-logger = logging.getLogger('telegram-codeforces-bot')
+logger = logging.getLogger('tgcfbot')
 
 token = os.getenv('TOKEN')     # telegram bot token
 db_url = os.getenv('DB_URL')   # mongodb url
