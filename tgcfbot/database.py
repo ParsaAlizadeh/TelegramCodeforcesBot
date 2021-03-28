@@ -59,7 +59,7 @@ class Database:
         logger.info(f'{len(new_problems)} new problems inserted')
         return len(new_problems)
 
-    def sample_problem(self, filter_: dict = None) -> Optional[cf.Problem]:
+    def sample_problem(self, filter_: dict) -> Optional[cf.Problem]:
         if filter_ is None:
             filter_ = {}
         doc, = list(self.problems.aggregate([

@@ -69,8 +69,19 @@ def register(update: Update, ctx: CallbackContext) -> None:
 
 
 @command('gimme')
-def gimme(update: Update, _: CallbackContext) -> None:
+def gimme(update: Update, ctx: CallbackContext) -> None:
+    tags = []
+    for q in ctx.args:
+        tags += [tag for tag in constants.tags if tag.startswith(q)]
+
     problem_filter = {}
+    if tags:
+        tag_list = '", "'.join(tags)
+        update.message.reply_text(text=f'looking for problems with tags: "{tag_list}"')
+        problem_filter['tags'] = {
+            '$all': tags
+        }
+
     if cf_user := db.get_cf_user(update.effective_user.id):
         submissions = cf.user.status(handle=cf_user.handle)
         solved = [s.problem.mention for s in submissions if s.verdict == cf.Submission.Verdict.OK]
