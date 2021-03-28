@@ -27,9 +27,9 @@ logging.basicConfig(
 
 logger = logging.getLogger('telegram-codeforces-bot')
 
-token = os.getenv('TOKEN')
-db_url = os.getenv('DB_URL')
-admins = set(map(int, os.getenv('ADMINS').split(':')))
+token = os.getenv('TOKEN')     # telegram bot token
+db_url = os.getenv('DB_URL')   # mongodb url
+admins = set(map(int, os.getenv('ADMINS').split(':')))  # telegram id of admins
 
 _commands: dict[str, Callable] = {}
 db = Database(db_url=db_url)
