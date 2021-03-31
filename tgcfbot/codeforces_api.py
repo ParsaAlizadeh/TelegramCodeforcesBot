@@ -1,5 +1,6 @@
-from enum import Enum
-from typing import NamedTuple, Any, Iterable
+# pylint: disable=invalid-name
+
+from typing import Any, Iterable, NamedTuple
 
 import requests
 
@@ -64,7 +65,7 @@ class RatingChange(NamedTuple):
     handle: str
     rank: int
     # ^ This field contains user rank on the moment of rating update.
-    # If afterwards rank changes (e.g. someone get disqualified), 
+    # If afterwards rank changes (e.g. someone get disqualified),
     # this field will not be update and will contain old rank.
     ratingUpdateTimeSeconds: int
     oldRating: int
@@ -283,7 +284,11 @@ class contest:
         )
 
     @staticmethod
-    def status(*, contest_id: int, handle: str = None, from_: int = None, count: int = None) -> list[Submission]:
+    def status(*,
+            contest_id: int,
+            handle: str = None,
+            from_: int = None,
+            count: int = None) -> list[Submission]:
         params = {'contestId': contest_id}
         if handle is not None:
             params['handle'] = handle
@@ -297,8 +302,9 @@ class contest:
 
 class problemset:
     @staticmethod
-    def problems(*, tags: Iterable[str] = None, problemset_name: str = None) -> tuple[
-        list[Problem], list[ProblemStatistics]]:
+    def problems(*,
+        tags: Iterable[str] = None,
+        problemset_name: str = None) -> tuple[list[Problem], list[ProblemStatistics]]:
         params = {}
         if tags is not None:
             params['tags'] = ';'.join(tags)

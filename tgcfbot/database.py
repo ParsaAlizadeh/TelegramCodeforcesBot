@@ -50,13 +50,13 @@ class Database:
                 documents=[_get_doc(p) for p in new_problems],
                 ordered=False
             )
-            init_score = {title: [] for title in constants.emojis.keys()}
+            init_score = {title: [] for title in constants.emojis}
             self.scores.insert_many(
                 documents=[{'_id': p.mention, **init_score} for p in new_problems],
                 ordered=False
             )
 
-        logger.info(f'{len(new_problems)} new problems inserted')
+        logger.info('%d new problems inserted', len(new_problems))
         return len(new_problems)
 
     def sample_problem(self, filter_: dict) -> Optional[cf.Problem]:
@@ -89,11 +89,11 @@ class Database:
     def get_scores(self, mention: str) -> dict[str, int]:
         docs = list(self.scores.aggregate([
             {'$match': {'_id': mention}},
-            {'$set': {title: {'$size': f'${title}'} for title in constants.emojis.keys()}},
+            {'$set': {title: {'$size': f'${title}'} for title in constants.emojis}},
             {'$project': {'_id': False}}
         ]))
         if not docs:
-            return {title: 0 for title in constants.emojis.keys()}
+            return {title: 0 for title in constants.emojis}
         return docs[0]
 
     def toggle_score(self, mention: str, title: str, tg_id: int) -> bool:

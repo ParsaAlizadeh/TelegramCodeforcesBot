@@ -52,17 +52,17 @@ def start(update: Update, _: CallbackContext) -> None:
 def register(update: Update, ctx: CallbackContext) -> None:
     handle = ctx.args[0]
     if handle is None:
-        update.message.reply_text(f'handle is empty')
+        update.message.reply_text('handle is empty')
         return
     if handle in constants.limited_handles:
-        update.message.reply_text(f'sagzan found')
+        update.message.reply_text('sagzan found')
         return
     try:
         handle = ctx.args[0]
         cf_user, = cf.user.info(handles=[handle])
         db.register_user(update.effective_user, cf_user)
     except cf.APIError:
-        update.message.reply_text(f'codeforces api error')
+        update.message.reply_text('codeforces api error')
         raise
     else:
         update.message.reply_text(f'register "{handle}"')
@@ -71,8 +71,8 @@ def register(update: Update, ctx: CallbackContext) -> None:
 @command('gimme')
 def gimme(update: Update, ctx: CallbackContext) -> None:
     tags = []
-    for q in ctx.args:
-        tags += [tag for tag in constants.tags if tag.startswith(q)]
+    for query in ctx.args:
+        tags += [tag for tag in constants.tags if tag.startswith(query)]
 
     problem_filter = {}
     if tags:
@@ -163,7 +163,7 @@ def callback_query(update: Update, _: CallbackContext) -> None:
 
 
 def main() -> None:
-    # db.insert_problems(cache.problems)  # TODO: uncomment this on deploy
+    # db.insert_problems(cf.problemset.problems()[0]) # TODO: uncomment this on deploy
 
     updater = Updater(token)
     dispatcher = updater.dispatcher

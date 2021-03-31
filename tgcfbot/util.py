@@ -7,8 +7,8 @@ from . import constants
 from .database import Database
 
 
-def score_markup(db: Database, mention: str) -> InlineKeyboardMarkup:
-    scores = db.get_scores(mention)
+def score_markup(database: Database, mention: str) -> InlineKeyboardMarkup:
+    scores = database.get_scores(mention)
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
