@@ -33,9 +33,6 @@ def to_json(obj: Any) -> Any:
             result[key] = to_json(value)
         return result
 
-    if isinstance(obj, Enum):
-        return obj.value
-
     return obj
 
 
@@ -74,23 +71,25 @@ class RatingChange(NamedTuple):
     newRating: int
 
 
+class ContestType:
+    CF = 'CF'
+    IOI = 'IOI'
+    ICPC = 'ICPC'
+
+
+class ContestPhase:
+    BEFORE = 'BEFORE'
+    CODING = 'CODING'
+    PENDING_SYSTEM_TEST = 'PENDING_SYSTEM_TEST'
+    SYSTEM_TEST = 'SYSTEM_TEST'
+    FINISHED = 'FINISHED'
+
+
 class Contest(NamedTuple):
-    class Type(Enum):
-        CF = 'CF'
-        IOI = 'IOI'
-        ICPC = 'ICPC'
-
-    class Phase(Enum):
-        BEFORE = 'BEFORE'
-        CODING = 'CODING'
-        PENDING_SYSTEM_TEST = 'PENDING_SYSTEM_TEST'
-        SYSTEM_TEST = 'SYSTEM_TEST'
-        FINISHED = 'FINISHED'
-
     id: int
     name: str
-    type: Type
-    phase: Phase
+    type: str   # ContestType
+    phase: str  # ContestPhase
     frozen: bool
     durationSeconds: int
     startTimeSeconds: int = None
@@ -110,16 +109,17 @@ class Member(NamedTuple):
     handle: str
 
 
-class Party(NamedTuple):
-    class ParticipantType(Enum):
-        CONTESTANT = 'CONTESTANT'
-        PRACTICE = 'PRACTICE'
-        VIRTUAL = 'VIRTUAL'
-        MANAGER = 'MANAGER'
-        OUT_OF_COMPETITION = 'OUT_OF_COMPETITION'
+class ParticipantType:
+    CONTESTANT = 'CONTESTANT'
+    PRACTICE = 'PRACTICE'
+    VIRTUAL = 'VIRTUAL'
+    MANAGER = 'MANAGER'
+    OUT_OF_COMPETITION = 'OUT_OF_COMPETITION'
 
+
+class Party(NamedTuple):
     members: tuple[Member]
-    participantType: ParticipantType
+    participantType: str    # ParticipantType
     ghost: bool
     contestId: int = None
     teamId: int = None
@@ -128,14 +128,15 @@ class Party(NamedTuple):
     startTimeSeconds: int = None
 
 
-class Problem(NamedTuple):
-    class Type(Enum):
-        PROGRAMMING = 'PROGRAMMING'
-        QUESTION = 'QUESTION'
+class ProblemType:
+    PROGRAMMING = 'PROGRAMMING'
+    QUESTION = 'QUESTION'
 
+
+class Problem(NamedTuple):
     index: str
     name: str
-    type: Type
+    type: str   # ProblemType
     tags: tuple[str]
     contestId: int = None
     problemsetName: str = None
@@ -166,33 +167,34 @@ class ProblemStatistics(NamedTuple):
     contestId: int = None
 
 
-class Submission(NamedTuple):
-    class Verdict(Enum):
-        FAILED = 'FAILED'
-        OK = 'OK'
-        PARTIAL = 'PARTIAL'
-        COMPILATION_ERROR = 'COMPILATION_ERROR'
-        RUNTIME_ERROR = 'RUNTIME_ERROR'
-        WRONG_ANSWER = 'WRONG_ANSWER'
-        PRESENTATION_ERROR = 'PRESENTATION_ERROR'
-        TIME_LIMIT_EXCEEDED = 'TIME_LIMIT_EXCEEDED'
-        MEMORY_LIMIT_EXCEEDED = 'MEMORY_LIMIT_EXCEEDED'
-        IDLENESS_LIMIT_EXCEEDED = 'IDLENESS_LIMIT_EXCEEDED'
-        SECURITY_VIOLATED = 'SECURITY_VIOLATED'
-        CRASHED = 'CRASHED'
-        INPUT_PREPARATION_CRASHED = 'INPUT_PREPARATION_CRASHED'
-        CHALLENGED = 'CHALLENGED'
-        SKIPPED = 'SKIPPED'
-        TESTING = 'TESTING'
-        REJECTED = 'REJECTED'
+class Verdict:
+    FAILED = 'FAILED'
+    OK = 'OK'
+    PARTIAL = 'PARTIAL'
+    COMPILATION_ERROR = 'COMPILATION_ERROR'
+    RUNTIME_ERROR = 'RUNTIME_ERROR'
+    WRONG_ANSWER = 'WRONG_ANSWER'
+    PRESENTATION_ERROR = 'PRESENTATION_ERROR'
+    TIME_LIMIT_EXCEEDED = 'TIME_LIMIT_EXCEEDED'
+    MEMORY_LIMIT_EXCEEDED = 'MEMORY_LIMIT_EXCEEDED'
+    IDLENESS_LIMIT_EXCEEDED = 'IDLENESS_LIMIT_EXCEEDED'
+    SECURITY_VIOLATED = 'SECURITY_VIOLATED'
+    CRASHED = 'CRASHED'
+    INPUT_PREPARATION_CRASHED = 'INPUT_PREPARATION_CRASHED'
+    CHALLENGED = 'CHALLENGED'
+    SKIPPED = 'SKIPPED'
+    TESTING = 'TESTING'
+    REJECTED = 'REJECTED'
 
+
+class Submission(NamedTuple):
     id: int
     creationTimeSeconds: int
     relativeTimeSeconds: int
     problem: Problem
     author: Party
     programmingLanguage: str
-    verdict: Verdict
+    verdict: str    # Verdict
     testset: str
     passedTestCount: int
     timeConsumedMillis: int
@@ -201,14 +203,15 @@ class Submission(NamedTuple):
     points: float = None
 
 
-class ProblemResult(NamedTuple):
-    class Type(Enum):
-        PRELIMINARY = 'PRELIMINARY'
-        FINAL = 'FINAL'
+class ProblemResultType:
+    PRELIMINARY = 'PRELIMINARY'
+    FINAL = 'FINAL'
 
+
+class ProblemResult(NamedTuple):
     points: float
     rejectedAttemptCount: int
-    type: Type
+    type: str   # ProblemResultType
     penalty: int = None
     bestSubmissionTimeSeconds: int = None
 

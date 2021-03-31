@@ -84,7 +84,7 @@ def gimme(update: Update, ctx: CallbackContext) -> None:
 
     if cf_user := db.get_cf_user(update.effective_user.id):
         submissions = cf.user.status(handle=cf_user.handle)
-        solved = [s.problem.mention for s in submissions if s.verdict == cf.Submission.Verdict.OK]
+        solved = [s.problem.mention for s in submissions if s.verdict == cf.Verdict.OK]
         problem_filter['_id'] = {'$nin': solved}
         if cf_user.rating:
             problem_filter['rating'] = {
