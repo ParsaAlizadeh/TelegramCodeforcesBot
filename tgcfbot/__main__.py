@@ -50,15 +50,14 @@ def start(update: Update, _: CallbackContext) -> None:
 
 @command('register')
 def register(update: Update, ctx: CallbackContext) -> None:
-    handle = ctx.args[0]
-    if handle is None:
+    if not ctx.args:
         update.message.reply_text('handle is empty')
         return
+    handle = ctx.args[0]
     if handle in constants.limited_handles:
         update.message.reply_text('sagzan found')
         return
     try:
-        handle = ctx.args[0]
         cf_user, = cf.user.info(handles=[handle])
         db.register_user(update.effective_user, cf_user)
     except cf.APIError:
