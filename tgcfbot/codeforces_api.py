@@ -1,19 +1,20 @@
 # pylint: disable=invalid-name
 
-from typing import Any, Iterable, NamedTuple
+from typing import Any, Iterable, NamedTuple, get_origin, get_args
 
 import requests
 
 
-def from_json(cls: type, data: Any) -> Any:
-    if hasattr(cls, '__origin__'):
-        assert len(cls.__args__) == 1, NotImplementedError('multiple args')
-        return cls.__origin__(from_json(cls.__args__[0], x) for x in data)
+def is_namedtuple(cls: type) -> bool:
+    return hasattr(cls, '__annotations__')
 
-    if isinstance(data, list):
-        return [from_json(cls, x) for x in data]
 
-    if hasattr(cls, '__annotations__'):
+def from_json(cls: type, data: Any) -> "cls":
+    if (orig := get_origin(cls)) in (list, tuple):
+        assert len(get_args(cls)) == 1, 'empty or multiple args for list/tuple'
+        return orig(from_json(get_args(cls)[0], x) for x in data)
+
+    if is_namedtuple(cls):
         for key, typ in cls.__annotations__.items():
             if key in data:
                 data[key] = from_json(typ, data[key])
@@ -26,7 +27,7 @@ def to_json(obj: Any) -> Any:
     if isinstance(obj, list):
         return [to_json(x) for x in obj]
 
-    if hasattr(obj, '__annotations__'):
+    if is_namedtuple(obj.__class__):
         result = {}
         for key, value in obj._asdict().items():
             if value is None:
@@ -250,13 +251,13 @@ class contest:
         if gym is not None:
             params['gym'] = gym
         result = send_request(method='contest.list', params=params)
-        return from_json(Contest, result)
+        return from_json(list[Contest], result)
 
     @staticmethod
     def rating_changes(*, contest_id: int) -> list[RatingChange]:
         params = {'contestId': contest_id}
         result = send_request(method='contest.ratingChanges', params=params)
-        return from_json(RatingChange, result)
+        return from_json(list[RatingChange], result)
 
     @staticmethod
     def standings(*, contest_id: int,
@@ -279,8 +280,8 @@ class contest:
         result = send_request(method='contest.standings', params=params)
         return (
             from_json(Contest, result['contest']),
-            from_json(Problem, result['problems']),
-            from_json(RanklistRow, result['rows']),
+            from_json(list[Problem], result['problems']),
+            from_json(list[RanklistRow], result['rows']),
         )
 
     @staticmethod
@@ -297,14 +298,15 @@ class contest:
         if count is not None:
             params['count'] = count
         result = send_request(method='contest.status', params=params)
-        return from_json(Submission, result)
+        return from_json(list[Submission], result)
 
 
 class problemset:
     @staticmethod
     def problems(*,
-        tags: Iterable[str] = None,
-        problemset_name: str = None) -> tuple[list[Problem], list[ProblemStatistics]]:
+            tags: Iterable[str] = None,
+            problemset_name: str = None
+        ) -> tuple[list[Problem], list[ProblemStatistics]]:
         params = {}
         if tags is not None:
             params['tags'] = ';'.join(tags)
@@ -312,8 +314,8 @@ class problemset:
             params['problemsetName'] = problemset_name
         result = send_request(method='problemset.problems', params=params)
         return (
-            from_json(Problem, result['problems']),
-            from_json(ProblemStatistics, result['problemStatistics']),
+            from_json(list[Problem], result['problems']),
+            from_json(list[ProblemStatistics], result['problemStatistics']),
         )
 
     @staticmethod
@@ -322,7 +324,7 @@ class problemset:
         if problemset_name is not None:
             params['problemsetName'] = problemset_name
         result = send_request(method='problemset.recentStatus', params=params)
-        return from_json(Submission, result)
+        return from_json(list[Submission], result)
 
 
 class user:
@@ -330,7 +332,7 @@ class user:
     def info(*, handles: Iterable[str]) -> list[User]:
         params = {'handles': ';'.join(handles)}
         result = send_request(method='user.info', params=params)
-        return from_json(User, result)
+        return from_json(list[User], result)
 
     @staticmethod
     def rated_list(*, active_only: bool = None) -> list[User]:
@@ -338,12 +340,12 @@ class user:
         if active_only is not None:
             params['activeOnly'] = active_only
         result = send_request(method='user.ratedList', params=params)
-        return from_json(User, result)
+        return from_json(list[User], result)
 
     @staticmethod
     def rating(*, handle: str) -> list[RatingChange]:
         result = send_request(method='user.rating', params={'handle': handle})
-        return from_json(RatingChange, result)
+        return from_json(list[RatingChange], result)
 
     @staticmethod
     def status(*, handle: str, from_: int = None, count: int = None) -> list[Submission]:
@@ -353,4 +355,4 @@ class user:
         if count is not None:
             params['count'] = count
         result = send_request(method='user.status', params=params)
-        return from_json(Submission, result)
+        return from_json(list[Submission], result)
