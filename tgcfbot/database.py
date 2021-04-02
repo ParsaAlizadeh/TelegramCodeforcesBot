@@ -32,51 +32,78 @@ class Database:
         document = self.users.find_one({"tg_user.id": tg_id})
         return document and cf.from_json(cf.User, document['cf_user'])
 
-    def insert_problems(self, problems: list[cf.Problem]) -> int:
+    def insert_problems(self, problems: list[cf.Problem], forced: bool = False) -> int:
         def _get_doc(problem: cf.Problem):
             doc = cf.to_json(problem)
             doc['_id'] = problem.mention
             return doc
 
-        already = set(doc['_id'] for doc in self.problems.find(
-            filter={'_id': {'$in': [p.mention for p in problems]}},
-            projection={'_id': True}
-        ))
+        if forced:
+            self.problems.delete_many(filter={})
 
-        new_problems = [p for p in problems if p.mention not in already]
+        query = {
+            'filter': {'_id': {'$in': [p.mention for p in problems]}},
+            'projection': {'_id': True}
+        }
+        already_problems = set(doc['_id'] for doc in self.problems.find(**query))
+        already_scores = set(doc['_id'] for doc in self.scores.find(**query))
+
+        new_problems = [p for p in problems if p.mention not in already_problems]
+        new_scores = [p for p in problems if p.mention not in already_scores]
 
         if new_problems:
             self.problems.insert_many(
                 documents=[_get_doc(p) for p in new_problems],
                 ordered=False
             )
+        if new_scores:
             init_score = {title: [] for title in constants.emojis}
             self.scores.insert_many(
-                documents=[{'_id': p.mention, **init_score} for p in new_problems],
+                documents=[{'_id': p.mention, **init_score} for p in new_scores],
                 ordered=False
             )
 
-        logger.info('%d new problems inserted', len(new_problems))
+        logger.info('%d new problems, %d new scores', len(new_problems), len(new_scores))
         return len(new_problems)
 
-    def sample_problem(self, filter_: dict) -> Optional[cf.Problem]:
-        if filter_ is None:
-            filter_ = {}
+    def sample_problem(
+            self,
+            tags: list[str] = None,
+            exclude: list[str] = None,
+            min_rating: int = 0,
+            max_rating: int = 9999
+        ) -> Optional[cf.Problem]:
+
+        _filter = {}
+        if tags:
+            _filter['tags'] = {'$all': tags}
+        if exclude:
+            _filter['_id'] = {'$nin': exclude}
+        _filter['rating'] = {
+            '$exists': True,
+            '$gte': min_rating,
+            '$lte': max_rating
+        }
+
         doc, = list(self.problems.aggregate([
-            {'$match': filter_},
+            {'$match': _filter},
             {'$project': {'_id': False}},
             {'$sample': {'size': 1}}
         ]))
         return cf.from_json(cf.Problem, doc)
 
     def query_problem(self, query: str, max_count: int = 10) -> list[cf.Problem]:
-        docs = self.problems.find(
-            filter={'$or': [
+        docs = self.problems.aggregate([
+            {'$match': {'$or': [
                 {'_id': query},
-                {'$text': {'$search': f'"{query}"'}}
-            ]},
-            projection={'_id': False}
-        ).limit(max_count)
+                {'$text': {'$search': str(query)}}
+            ]}},
+            {'$sort': {
+                'score': {'$meta': 'textScore'}
+            }},
+            {'$project': {'_id': False}},
+            {'$limit': max_count}
+        ])
         return [cf.from_json(cf.Problem, p) for p in docs]
 
     def get_problem(self, mention: str) -> Optional[cf.Problem]:

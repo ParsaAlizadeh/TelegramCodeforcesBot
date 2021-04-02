@@ -69,35 +69,29 @@ def register(update: Update, ctx: CallbackContext) -> None:
 
 @command('gimme')
 def gimme(update: Update, ctx: CallbackContext) -> None:
-    tags = []
-    for query in ctx.args:
-        tags += [tag for tag in constants.tags if tag.startswith(query)]
-
-    problem_filter = {}
-    if tags:
+    if tags := util.complete_tags(ctx.args):
         tag_list = '", "'.join(tags)
         update.message.reply_text(text=f'looking for problems with tags: "{tag_list}"')
-        problem_filter['tags'] = {
-            '$all': tags
-        }
+
+    exclude = None
+    min_rating = 0
+    max_rating = 1800
 
     if cf_user := db.get_cf_user(update.effective_user.id):
         submissions = cf.user.status(handle=cf_user.handle)
-        solved = [s.problem.mention for s in submissions if s.verdict == cf.Verdict.OK]
-        problem_filter['_id'] = {'$nin': solved}
+        # exclude solved problems
+        solved = [s.problem for s in submissions if s.verdict == cf.Verdict.OK]
+        exclude = [p.mention for p in util.valid_problems(solved)]
         if cf_user.rating:
-            problem_filter['rating'] = {
-                '$exists': True,
-                '$gte': cf_user.rating - 100,
-                '$lte': cf_user.rating + 300
-            }
-        else:
-            problem_filter['rating'] = {
-                '$exists': True,
-                '$lte': 1800
-            }
+            min_rating = cf_user.rating - 100
+            max_rating = cf_user.rating + 300
 
-    problem = db.sample_problem(problem_filter)
+    problem = db.sample_problem(
+        tags=tags,
+        exclude=exclude,
+        min_rating=min_rating,
+        max_rating=max_rating
+    )
     update.message.reply_text(
         text=problem.html,
         parse_mode='HTML',
@@ -106,11 +100,13 @@ def gimme(update: Update, ctx: CallbackContext) -> None:
     )
 
 
-@command('cache')
+@command('update')
 def cache_cmd(update: Update, _: CallbackContext) -> None:
     if update.effective_user.id in admins:
-        # TODO: Update problems
-        update.message.reply_text('cache done')
+        update.message.reply_text('update started')
+        problems, _ = cf.problemset.problems()
+        db.insert_problems(problems, forced=True)
+        update.message.reply_text('update done')
 
 
 def inline_query(update: Update, _: CallbackContext) -> None:
@@ -162,8 +158,6 @@ def callback_query(update: Update, _: CallbackContext) -> None:
 
 
 def main() -> None:
-    # db.insert_problems(cf.problemset.problems()[0]) # TODO: uncomment this on deploy
-
     updater = Updater(token)
     dispatcher = updater.dispatcher
 
