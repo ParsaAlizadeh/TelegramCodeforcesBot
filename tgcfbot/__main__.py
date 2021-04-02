@@ -22,7 +22,7 @@ from . import util
 from .database import Database
 
 logging.basicConfig(
-    format='[%(levelname)s] %(name)s - %(message)s', level=logging.INFO
+    format='[%(levelname)s] %(name)s - %(message)s', level=logging.DEBUG
 )
 
 logger = logging.getLogger('tgcfbot')
@@ -101,12 +101,12 @@ def gimme(update: Update, ctx: CallbackContext) -> None:
 
 
 @command('update')
-def cache_cmd(update: Update, _: CallbackContext) -> None:
+def update_cmd(update: Update, _: CallbackContext) -> None:
     if update.effective_user.id in admins:
         update.message.reply_text('update started')
         problems, _ = cf.problemset.problems()
-        db.insert_problems(problems, forced=True)
-        update.message.reply_text('update done')
+        inserted = db.insert_problems(problems, forced=True)
+        update.message.reply_text(f'update done with {inserted} new problems')
 
 
 def inline_query(update: Update, _: CallbackContext) -> None:

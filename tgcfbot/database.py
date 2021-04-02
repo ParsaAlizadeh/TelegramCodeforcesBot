@@ -39,6 +39,10 @@ class Database:
             return doc
 
         if forced:
+            if self.problems.count_documents({}) > len(problems):
+                logger.critical("danger of dropping problem collection")
+                return 0
+            logger.warning("droping problem collection")
             self.problems.delete_many(filter={})
 
         query = {
